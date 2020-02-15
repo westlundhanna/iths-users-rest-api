@@ -1,5 +1,5 @@
 const express = require('express')
-const Datastore = require('nedb')
+const Datastore = require('nedb-promise')
 
 const users = new Datastore({filename:'users.db', autoload:true})
 
@@ -7,23 +7,19 @@ const app = express()
 
 app.use( express.json() )
 
-// GET /users
 app.get('/users', async(req,res) => {
     
-    users.find({}, function(error, documents){
-        let responseJSON = {"results": documents}
-        res.json(responseJSON)
+    const result = await users.find({})
+        //let responseJSON = {"results": documents}
+        res.json({"result": result})
         // let responseBody = JSON.stringify(responseJSON)
         // res.set("Content-Type", "application/json")
         // res.send(responseBody)
-    })
 
 })
-//GET /users/:id
 app.get('/users/:id', async(req, res) => {
-    users.findOne({_id: req.params.id}, function (err, doc) { //hämtar det id jag skriver in i postman och returnerar den usern
-        res.json(doc)
-    })
+    const result = await users.findOne({_id: req.params.id}) //hämtar det id jag skriver in i postman och returnerar den usern
+        res.json(result)
 })
 app.post('/users', async(req, res) => {
     let newUser = {
@@ -36,15 +32,16 @@ app.post('/users', async(req, res) => {
         nat: req.body.nat, 
         _id: req.params._id
     }
-    users.insert(newUser, function (err, newDoc) {
-        res.json(newDoc)
-    });
+    const result = await users.insert(newUser) 
+        res.json({"result": result})
 })
 app.delete('/users/:id', async(req, res) => {
-    users.remove({ _id: req.params.id }, {}, function (err, numRemoved) {
+    const numRemoved = await users.remove({ _id: req.params.id })        
         res.json(numRemoved)
-    });
-  
+})
+app.patch('/users/:id', async(req, res) => {
+    const update = await users.update({_id: req.params.id}, { $set: { "name.title": 'Mrs' }})
+        res.json(update)
 })
 app.listen(8080, console.log("Server started"))
 
